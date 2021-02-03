@@ -5,7 +5,7 @@
 "
 " TODO: store file name using fnameescape()
 " TODO: add support to files not in blist
-" FIXME: handle preview windows
+" FIXME: handle preview and help windows
 "
 " Public functions:
 " MP_MarkersToGlobals()     to save Markers ino global vars
@@ -131,6 +131,7 @@ function! MP_EchomAll()
     for buf in buffer_infos
 "       if i%2 | echohl None | else | echohl CursorLine | endif
 "       let i = i+1
+        if buf['filename'] =~ '^$' | continue | endif
         let markers = ''
         if has_key(filenames_markers_dict, buf['filename'])
             let markers = join(filenames_markers_dict[buf['filename']], "")
