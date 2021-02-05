@@ -100,19 +100,22 @@ function! s:GetDictOfArgPerFile()
     let d = {}
     let i = 0
     while i <= argc()
-        let d[argv(i)] =  i
+        let d[argv(i)] =  i + 1
     let i = i + 1
     endwhile
     return d
 endfunction
 
+" a-zA-Z --> marker, \d --> arg, \db --> buffer, § --> alternate file,
 function! s:Goto(somewhere)
     if a:somewhere =~ '^[a-zA-Z]$'
         execute "normal! `" . toupper(a:somewhere)
     elseif a:somewhere =~ '[0-9]\+b'
         execute a:somewhere
     elseif a:somewhere =~ '[0-9]\+'
-        execute 'argument ' . (a:somewhere + 1)
+        execute 'argument ' . a:somewhere
+    elseif a:somewhere =~ '§'
+        execute 'e #'
     endif
 endfunction
 
@@ -125,12 +128,9 @@ function! MP_EchomAll()
     let filenames_tabs_dict = s:GetDictOfTabsPerFile()
     let filenames_arg_dict = s:GetDictOfArgPerFile()
     echohl Title
-    echo('MARKS   b a  t filename')
+    echo('MARKS   b a  t   filename')
     echohl None
-"   let i = 1
     for buf in buffer_infos
-"       if i%2 | echohl None | else | echohl CursorLine | endif
-"       let i = i+1
         if buf['filename'] =~ '^$' | continue | endif
         let markers = ''
         if has_key(filenames_markers_dict, buf['filename'])
@@ -144,8 +144,12 @@ function! MP_EchomAll()
         if has_key(filenames_arg_dict, buf['filename'])
             let arg = filenames_arg_dict[buf['filename']]
         endif
+        let flag = ''
+        if bufname('#') == buf['filename']
+            let flag = '#'
+        endif
         if bufnr() == buf['bufnr'] | echohl CursorLine | endif
-        echo printf('%5s %3s %1s %2s %s', markers, buf['bufnr'], arg, tabs, buf['filename'])
+        echo printf('%5s %3s %1s %2s %1s %s', markers, buf['bufnr'], arg, tabs, flag, buf['filename'])
         echohl None
     endfor
     call s:Goto(input('going somewhere?'))
