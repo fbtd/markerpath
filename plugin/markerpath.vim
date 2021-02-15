@@ -106,21 +106,22 @@ function! s:GetDictOfArgPerFile()
     return d
 endfunction
 
-" a-zA-Z --> marker, \d --> arg, \db --> buffer, § --> alternate file,
+" a-zA-Z --> marker, \d --> arg, \db --> buffer, §|# --> alternate file,
+" :command --> execute command
 function! s:Goto(somewhere)
     if a:somewhere =~ '^[a-zA-Z]$'
         execute "normal! `" . toupper(a:somewhere)
-    elseif a:somewhere =~ '[0-9]\+b'
+    elseif a:somewhere =~ '^[0-9]\+b'
         execute a:somewhere
-    elseif a:somewhere =~ '[0-9]\+'
+    elseif a:somewhere =~ '^[0-9]\+'
         execute 'argument ' . a:somewhere
-    elseif a:somewhere =~ '§'
+    elseif a:somewhere =~ '^[§#]$'
         execute 'e #'
+    elseif a:somewhere =~ '^:'
+        execute a:somewhere[1:]
     endif
 endfunction
 
-"TODO arg contains b, display buffers, a, display args, m, display local marks..
-"TODO add some text of the line
 function! MP_EchomAll()
     let buffer_infos = map(getbufinfo(), function('s:AddFilenameToBufinfo'))
     call sort(buffer_infos, function('s:SortBufinfosByFilename'))
@@ -130,6 +131,7 @@ function! MP_EchomAll()
     echohl Title
     echo('MARKS   b a  t   filename')
     echohl None
+    let i = 0
     for buf in buffer_infos
         if buf['filename'] =~ '^$' | continue | endif
         let markers = ''
@@ -148,9 +150,14 @@ function! MP_EchomAll()
         if bufname('#') == buf['filename']
             let flag = '#'
         endif
-        if bufnr() == buf['bufnr'] | echohl CursorLine | endif
+        if bufnr() == buf['bufnr']
+            echohl CursorLineNr
+        elseif i % 2
+            echohl CursorLine
+        endif
         echo printf('%5s %3s %1s %2s %1s %s', markers, buf['bufnr'], arg, tabs, flag, buf['filename'])
         echohl None
+        let i += 1
     endfor
     call s:Goto(input('going somewhere?'))
 endfunction
